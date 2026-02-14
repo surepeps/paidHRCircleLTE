@@ -314,6 +314,24 @@ twq('config','ozo3a');
         </div>
       </div>
     </div>
+    <div id="hubspot-form-wrap" style="display:none" class="circle-form_main">
+      <div class="circle-form_wrapper">
+        <div style="opacity:0;-webkit-transform:translate3d(0, 4rem, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-moz-transform:translate3d(0, 4rem, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);-ms-transform:translate3d(0, 4rem, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0);transform:translate3d(0, 4rem, 0) scale3d(1, 1, 1) rotateX(0) rotateY(0) rotateZ(0) skew(0, 0)" class="circle_form-inner">
+          <div data-w-id="hubspot-close-icon" class="circle-form_close-icon" style="cursor: pointer;">
+            <div class="icon-size-24px w-embed"><svg width="100%" height="100%" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg></div>
+          </div>
+          <div id="circle-form-hubspot" class="circle-form w-form">
+            <div class="circle-form_heading">
+              <h2 class="text-size-x-large-40px text-weight-medium">Join Circle by PaidHR</h2>
+              <p class="text-size-medium-new max-width-320px text-color-secondary">Step into the Circle built for HR leaders across industries.</p>
+            </div>
+            <div id="circle-form" class="circle-form_fields"></div>
+          </div>
+        </div>
+      </div>
+    </div>
     <nav class="circle_nav">
       <div class="container-large is-circle">
         <div class="circle_content">
@@ -347,9 +365,15 @@ twq('config','ozo3a');
           <div data-w-id="c93aba7a-d031-e45e-290d-05db7ba33dd5" style="opacity:0" class="circle_right-item">
             <a href="#Circle-Benefit" class="circle_nav-link hide-from-tablet">Circle Benefits</a>
             <a href="#How-to-join" class="circle_nav-link hide-from-tablet">How to Join</a>
-            <a href="#" class="circle_button w-inline-block">
+            <a href="#" class="circle_button w-inline-block" id="join-community-btn">
               <div class="circle_btn-bg">
                 <div>Join the community</div>
+              </div>
+              <div class="circle_btn-bl-bg"></div>
+            </a>
+            <a href="#" class="circle_button w-inline-block" id="hubspot-form-btn" style="margin-left: 12px;">
+              <div class="circle_btn-bg">
+                <div>HubSpot Form</div>
               </div>
               <div class="circle_btn-bl-bg"></div>
             </a>
@@ -1534,6 +1558,201 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+  <!-- HubSpot Modal and Form Handler -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get modal elements
+      const leadFormWrap = document.getElementById('lead-form-wrap');
+      const hubspotFormWrap = document.getElementById('hubspot-form-wrap');
+      const joinCommunityBtn = document.getElementById('join-community-btn');
+      const hubspotFormBtn = document.getElementById('hubspot-form-btn');
+      
+      // Get close icons
+      const leadFormCloseIcon = document.querySelector('#lead-form-wrap .circle-form_close-icon');
+      const hubspotCloseIcon = document.querySelector('#hubspot-form-wrap .circle-form_close-icon');
+      
+      // Function to show modal
+      function showModal(modal) {
+        if (modal) {
+          modal.style.display = 'block';
+          document.body.style.overflow = 'hidden';
+        }
+      }
+      
+      // Function to hide modal
+      function hideModal(modal) {
+        if (modal) {
+          modal.style.display = 'none';
+          document.body.style.overflow = '';
+        }
+      }
+      
+      // Join Community button click handler
+      if (joinCommunityBtn) {
+        joinCommunityBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          hideModal(hubspotFormWrap);
+          showModal(leadFormWrap);
+        });
+      }
+      
+      // HubSpot Form button click handler
+      if (hubspotFormBtn) {
+        hubspotFormBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          hideModal(leadFormWrap);
+          showModal(hubspotFormWrap);
+          // Load HubSpot form if not already loaded
+          if (typeof hbspt === 'undefined') {
+            loadHubSpotForm();
+          } else {
+            // Reload form if HubSpot is already available
+            if (hbspt.forms && hbspt.forms.create) {
+              setTimeout(loadHubSpotForm, 100);
+            }
+          }
+        });
+      }
+      
+      // Close button handlers
+      if (leadFormCloseIcon) {
+        leadFormCloseIcon.addEventListener('click', function(e) {
+          e.preventDefault();
+          hideModal(leadFormWrap);
+        });
+      }
+      
+      if (hubspotCloseIcon) {
+        hubspotCloseIcon.addEventListener('click', function(e) {
+          e.preventDefault();
+          hideModal(hubspotFormWrap);
+        });
+      }
+      
+      // Click on modal background to close
+      if (leadFormWrap) {
+        leadFormWrap.addEventListener('click', function(e) {
+          if (e.target === this) {
+            hideModal(this);
+          }
+        });
+      }
+      
+      if (hubspotFormWrap) {
+        hubspotFormWrap.addEventListener('click', function(e) {
+          if (e.target === this) {
+            hideModal(this);
+          }
+        });
+      }
+      
+      // Load HubSpot form script and create form
+      function loadHubSpotForm() {
+        // Clear previous form if exists
+        const formContainer = document.getElementById('circle-form');
+        if (formContainer) {
+          formContainer.innerHTML = '';
+        }
+        
+        // Load HubSpot embed script
+        const script = document.createElement('script');
+        script.charset = 'utf-8';
+        script.type = 'text/javascript';
+        script.src = '//js-eu1.hsforms.net/forms/embed/v2.js';
+        
+        script.onload = function() {
+          if (typeof hbspt !== 'undefined' && hbspt.forms) {
+            // Create the form
+            hbspt.forms.create({
+              portalId: '26055346',
+              formId: '66851a67-87da-466c-b329-ee915bb8312f',
+              region: 'eu1',
+              target: '#circle-form'
+            });
+            
+            // Apply custom styling to HubSpot form fields
+            setTimeout(styleHubSpotForm, 500);
+          }
+        };
+        
+        // Remove any existing HubSpot script to avoid conflicts
+        const existingScript = document.querySelector('script[src*="js-eu1.hsforms.net"]');
+        if (existingScript && existingScript !== script) {
+          existingScript.remove();
+        }
+        
+        document.head.appendChild(script);
+      }
+      
+      // Function to style HubSpot form fields
+      function styleHubSpotForm() {
+        // Wait for form to render
+        const observer = new MutationObserver(function(mutations) {
+          const formFields = document.querySelectorAll('#circle-form .hs-form-field input[type="text"], #circle-form .hs-form-field input[type="email"], #circle-form .hs-form-field input[type="tel"], #circle-form .hs-form-field select, #circle-form .hs-form-field textarea');
+          
+          if (formFields.length > 0) {
+            formFields.forEach(field => {
+              // Apply form-input-field styles from the original form
+              field.classList.add('form-input-field', 'is-circle');
+              
+              // Apply inline styles to match original form styling
+              field.style.width = '100%';
+              field.style.padding = '12px 16px';
+              field.style.borderRadius = '8px';
+              field.style.border = '1px solid #e0e0e0';
+              field.style.fontSize = '16px';
+              field.style.backgroundColor = '#ffffff';
+              field.style.fontFamily = 'inherit';
+              field.style.color = '#000000';
+              field.style.transition = 'border-color 0.2s ease';
+              field.style.boxSizing = 'border-box';
+              
+              // Add hover and focus states
+              field.addEventListener('focus', function() {
+                this.style.borderColor = '#144bf5';
+                this.style.boxShadow = '0 0 0 3px rgba(20, 75, 245, 0.1)';
+              });
+              
+              field.addEventListener('blur', function() {
+                this.style.borderColor = '#e0e0e0';
+                this.style.boxShadow = 'none';
+              });
+              
+              // Style placeholder text
+              if (field.placeholder) {
+                field.style.color = '#000000';
+              }
+            });
+            
+            // Style labels
+            const labels = document.querySelectorAll('#circle-form .hs-form-field label');
+            labels.forEach(label => {
+              label.style.display = 'block';
+              label.style.marginBottom = '6px';
+              label.style.fontSize = '14px';
+              label.style.fontWeight = '500';
+              label.style.color = '#000000';
+            });
+            
+            // Style form wrapper
+            const formWrapper = document.getElementById('circle-form');
+            if (formWrapper) {
+              formWrapper.style.display = 'flex';
+              formWrapper.style.flexDirection = 'column';
+              formWrapper.style.gap = '12px';
+            }
+            
+            observer.disconnect();
+          }
+        });
+        
+        observer.observe(document.getElementById('circle-form'), {
+          childList: true,
+          subtree: true
+        });
+      }
+    });
+  </script>
   <script src="https://hubspotonwebflow.com/assets/js/form-124.js" type="text/javascript" integrity="sha384-bjyNIOqAKScdeQ3THsDZLGagNN56B4X2Auu9YZIGu+tA/PlggMk4jbWruG/P6zYj" crossorigin="anonymous"></script>
 </body>
 </html>
