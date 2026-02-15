@@ -421,12 +421,31 @@ const DynamicFormHandler = (() => {
   /**
    * Initialize the form
    */
-  const init = () => {
-    console.log('[v0] Initializing dynamic form handler');
-    setupFormSubmission();
-    setupRecaptcha();
-    setupEventListeners();
-    setupModalScrollLock();
+  const init = async () => {
+    try {
+      console.log('[v0] Initializing dynamic form handler');
+      
+      // Load form fields from JSON first
+      await loadFormFields();
+      
+      // Render form fields dynamically
+      renderFormFields();
+      
+      // Setup form submission
+      setupFormSubmission();
+      
+      // Setup modal scroll lock
+      setupModalScrollLock();
+      
+      // Setup CAPTCHA with a delay to ensure form is fully rendered
+      setTimeout(() => {
+        setupRecaptcha();
+      }, 500);
+      
+      console.log('[v0] Form handler initialized successfully');
+    } catch (error) {
+      console.error('[v0] Error initializing form handler:', error);
+    }
   };
 
   /**
