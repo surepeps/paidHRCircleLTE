@@ -384,12 +384,12 @@
         "fieldType": "recaptcha",
         "enabled": true,
         "visible": true,
-        "siteKey": "6Lc2a2wsAAAAAIAmhshFdBfJmN64R_Znd7g1nc2F",
-        "version": "v3",
-        "showOnlyWhenFormValid": true,
+        "siteKey": "6Ld_b2wsAAAAAIT6G-iAAlMwhYHOPXZzNjzfzJ6j",
+        "version": "v2",
+        "showOnlyWhenFormValid": false,
         "name": "recaptcha",
         "label": "reCAPTCHA Verification",
-        "description": "Google reCAPTCHA v3"
+        "description": "Please verify you're human"
     },
     {
         "fieldType": "submit",
