@@ -151,16 +151,29 @@ const DynamicFormHandler = (() => {
         wrapper.innerHTML = renderRadioField(currentField);
         fieldsContainer.appendChild(wrapper);
         i++;
+      } else if (currentField.fullWidth) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'field-wrapper';
+        wrapper.style.gridColumn = '1 / -1';
+        wrapper.innerHTML = renderField(currentField);
+        fieldsContainer.appendChild(wrapper);
+        i++;
       } else {
         const wrapper = document.createElement('div');
         wrapper.className = 'form-field-wrappper';
-        
+
         const fieldDiv1 = document.createElement('div');
         fieldDiv1.className = 'field-wrapper';
         fieldDiv1.innerHTML = renderField(currentField);
         wrapper.appendChild(fieldDiv1);
-        
-        if (i + 1 < formFields.length && formFields[i + 1].fieldType !== 'checkbox') {
+
+        const nextField = formFields[i + 1];
+        const nextIsWide = nextField && (
+          ['checkbox', 'radio', 'booleancheckbox'].includes(nextField.fieldType) ||
+          nextField.fullWidth
+        );
+
+        if (i + 1 < formFields.length && !nextIsWide) {
           const fieldDiv2 = document.createElement('div');
           fieldDiv2.className = 'field-wrapper';
           fieldDiv2.innerHTML = renderField(formFields[i + 1]);
@@ -169,7 +182,7 @@ const DynamicFormHandler = (() => {
         } else {
           i++;
         }
-        
+
         fieldsContainer.appendChild(wrapper);
       }
     }
@@ -686,16 +699,11 @@ const DynamicFormHandler = (() => {
       });
     });
 
-    // Visual toggle for checkboxes (Webflow doesn't wire dynamically added inputs)
-    const allCheckboxInputs = form.querySelectorAll('input[type="checkbox"][data-field-name]');
-    allCheckboxInputs.forEach((checkbox) => {
-      checkbox.addEventListener('change', () => {
-        const visualDiv = checkbox.previousElementSibling;
-        if (visualDiv && visualDiv.classList.contains('w-checkbox-input')) {
-          visualDiv.classList.toggle('w--redirected-checked', checkbox.checked);
-        }
-        updateButtonState();
-      });
+    // Checkbox visual toggle is handled by Webflow's delegated change handler in webflow.js.
+    // Adding our own here would double-toggle the class (Webflow uses toggleClass = pure toggle),
+    // causing the first click to appear as no-op. We only need to wire updateButtonState.
+    form.querySelectorAll('input[type="checkbox"][data-field-name]').forEach((checkbox) => {
+      checkbox.addEventListener('change', () => updateButtonState());
     });
   };
 
