@@ -136,12 +136,19 @@ const DynamicFormHandler = (() => {
     let i = 0;
     while (i < formFields.length) {
       const currentField = formFields[i];
-      
+
       if (currentField.fieldType === 'checkbox') {
         const wrapper = document.createElement('div');
         wrapper.className = 'field-wrapper';
         wrapper.style.gridColumn = '1 / -1';
         wrapper.innerHTML = renderCheckboxField(currentField);
+        fieldsContainer.appendChild(wrapper);
+        i++;
+      } else if (currentField.fieldType === 'radio' || currentField.fieldType === 'booleancheckbox') {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'field-wrapper';
+        wrapper.style.gridColumn = '1 / -1';
+        wrapper.innerHTML = renderRadioField(currentField);
         fieldsContainer.appendChild(wrapper);
         i++;
       } else {
@@ -227,7 +234,7 @@ const DynamicFormHandler = (() => {
   const renderField = (field) => {
     const fieldId = field.name;
     const isRequired = field.required ? 'required' : '';
-    const placeholder = field.placeholder || field.unselectedLabel || '';
+    const placeholder = field.placeholder || field.unselectedLabel || field.label || '';
 
     let fieldHTML = `<label for="${fieldId}" class="field-label hide">${field.label || placeholder}</label>`;
 
@@ -266,6 +273,29 @@ const DynamicFormHandler = (() => {
             <div class="w-checkbox-input w-checkbox-input--inputType-custom circle-checkbox"></div>
             <input type="checkbox" name="${field.name}" id="${checkboxId}" value="${option.value}" data-field-name="${field.name}" data-object-type-id="${field.objectTypeId}" style="opacity:0;position:absolute;z-index:-1" ${field.required ? 'required' : ''}>
             <span class="circle-checkbox-label w-form-label" for="${checkboxId}">${option.label}</span>
+          </label>
+        `;
+      });
+    }
+
+    fieldHTML += '</div>';
+    return fieldHTML;
+  };
+
+  /**
+   * Render radio / booleancheckbox field group
+   */
+  const renderRadioField = (field) => {
+    let fieldHTML = `<div class="field-label">${field.label}</div><div class="circle-form_option-wrap">`;
+
+    if (field.options && field.options.length > 0) {
+      field.options.forEach((option) => {
+        const radioId = `${field.name}_${option.value.replace(/\s+/g, '_').toLowerCase()}`;
+        fieldHTML += `
+          <label class="w-checkbox">
+            <div class="w-checkbox-input w-checkbox-input--inputType-custom circle-checkbox"></div>
+            <input type="radio" name="${field.name}" id="${radioId}" value="${option.value}" data-field-name="${field.name}" data-object-type-id="${field.objectTypeId}" style="opacity:0;position:absolute;z-index:-1" ${field.required ? 'required' : ''}>
+            <span class="circle-checkbox-label w-form-label" for="${radioId}">${option.label}</span>
           </label>
         `;
       });
@@ -463,6 +493,7 @@ const DynamicFormHandler = (() => {
 
     const inputs = form.querySelectorAll('input[data-field-name], select[data-field-name], textarea[data-field-name]');
     
+    const processedRadioGroups = new Set();
     for (const input of inputs) {
       if (input.hasAttribute('required')) {
         if (input.type === 'checkbox') {
@@ -470,6 +501,15 @@ const DynamicFormHandler = (() => {
           const anyChecked = Array.from(checkboxGroup).some((cb) => cb.checked);
           if (!anyChecked) {
             return false;
+          }
+        } else if (input.type === 'radio') {
+          if (!processedRadioGroups.has(input.name)) {
+            processedRadioGroups.add(input.name);
+            const radioGroup = form.querySelectorAll(`input[name="${input.name}"]`);
+            const anyChecked = Array.from(radioGroup).some((r) => r.checked);
+            if (!anyChecked) {
+              return false;
+            }
           }
         } else if (input.value.trim() === '') {
           return false;
@@ -491,27 +531,28 @@ const DynamicFormHandler = (() => {
     let isValid = true;
     let firstInvalidField = null;
 
+    const processedRadioGroups = new Set();
     inputs.forEach((input) => {
       input.style.borderColor = '';
       input.style.borderWidth = '';
-      
+
       if (input.hasAttribute('required')) {
         let fieldValid = true;
-        
+
         if (input.type === 'checkbox') {
           const checkboxGroup = form.querySelectorAll(`input[name="${input.name}"]`);
           const anyChecked = Array.from(checkboxGroup).some((cb) => cb.checked);
           if (!anyChecked) {
             fieldValid = false;
             isValid = false;
-            
+
             const checkboxWrapper = input.closest('.circle-form_option-wrap');
             if (checkboxWrapper) {
               checkboxWrapper.style.border = '2px solid #ff0000';
               checkboxWrapper.style.borderRadius = '4px';
               checkboxWrapper.style.padding = '8px';
             }
-            
+
             if (!firstInvalidField) firstInvalidField = input;
           } else {
             const checkboxWrapper = input.closest('.circle-form_option-wrap');
@@ -520,13 +561,36 @@ const DynamicFormHandler = (() => {
               checkboxWrapper.style.padding = '';
             }
           }
+        } else if (input.type === 'radio') {
+          if (!processedRadioGroups.has(input.name)) {
+            processedRadioGroups.add(input.name);
+            const radioGroup = form.querySelectorAll(`input[name="${input.name}"]`);
+            const anyChecked = Array.from(radioGroup).some((r) => r.checked);
+            if (!anyChecked) {
+              fieldValid = false;
+              isValid = false;
+              const radioWrapper = input.closest('.circle-form_option-wrap');
+              if (radioWrapper) {
+                radioWrapper.style.border = '2px solid #ff0000';
+                radioWrapper.style.borderRadius = '4px';
+                radioWrapper.style.padding = '8px';
+              }
+              if (!firstInvalidField) firstInvalidField = input;
+            } else {
+              const radioWrapper = input.closest('.circle-form_option-wrap');
+              if (radioWrapper) {
+                radioWrapper.style.border = '';
+                radioWrapper.style.padding = '';
+              }
+            }
+          }
         } else if (input.value.trim() === '') {
           fieldValid = false;
           isValid = false;
-          
+
           input.style.borderColor = '#ff0000';
           input.style.borderWidth = '2px';
-          
+
           if (!firstInvalidField) firstInvalidField = input;
         }
       }
@@ -557,7 +621,7 @@ const DynamicFormHandler = (() => {
             const checkboxGroup = form.querySelectorAll(`input[name="${input.name}"]`);
             const anyChecked = Array.from(checkboxGroup).some((cb) => cb.checked);
             const checkboxWrapper = input.closest('.circle-form_option-wrap');
-            
+
             if (checkboxWrapper) {
               if (anyChecked) {
                 checkboxWrapper.style.border = '';
@@ -566,6 +630,21 @@ const DynamicFormHandler = (() => {
                 checkboxWrapper.style.border = '2px solid #ff0000';
                 checkboxWrapper.style.borderRadius = '4px';
                 checkboxWrapper.style.padding = '8px';
+              }
+            }
+          } else if (input.type === 'radio') {
+            const radioGroup = form.querySelectorAll(`input[name="${input.name}"]`);
+            const anyChecked = Array.from(radioGroup).some((r) => r.checked);
+            const radioWrapper = input.closest('.circle-form_option-wrap');
+
+            if (radioWrapper) {
+              if (anyChecked) {
+                radioWrapper.style.border = '';
+                radioWrapper.style.padding = '';
+              } else {
+                radioWrapper.style.border = '2px solid #ff0000';
+                radioWrapper.style.borderRadius = '4px';
+                radioWrapper.style.padding = '8px';
               }
             }
           } else {
@@ -577,7 +656,7 @@ const DynamicFormHandler = (() => {
               input.style.borderWidth = '';
             }
           }
-          
+
           updateButtonState();
         };
         
@@ -585,6 +664,38 @@ const DynamicFormHandler = (() => {
         input.addEventListener('change', validateInput);
         input.addEventListener('input', validateInput);
       }
+    });
+
+    // Visual toggle for radio buttons: update the custom .w-checkbox-input div
+    const allRadioInputs = form.querySelectorAll('input[type="radio"][data-field-name]');
+    allRadioInputs.forEach((radio) => {
+      radio.addEventListener('change', () => {
+        // Clear checked state on every option in this radio group
+        form.querySelectorAll(`input[name="${radio.name}"]`).forEach((r) => {
+          const visualDiv = r.previousElementSibling;
+          if (visualDiv && visualDiv.classList.contains('w-checkbox-input')) {
+            visualDiv.classList.remove('w--redirected-checked');
+          }
+        });
+        // Apply checked state to the selected option
+        const visualDiv = radio.previousElementSibling;
+        if (visualDiv && visualDiv.classList.contains('w-checkbox-input')) {
+          visualDiv.classList.add('w--redirected-checked');
+        }
+        updateButtonState();
+      });
+    });
+
+    // Visual toggle for checkboxes (Webflow doesn't wire dynamically added inputs)
+    const allCheckboxInputs = form.querySelectorAll('input[type="checkbox"][data-field-name]');
+    allCheckboxInputs.forEach((checkbox) => {
+      checkbox.addEventListener('change', () => {
+        const visualDiv = checkbox.previousElementSibling;
+        if (visualDiv && visualDiv.classList.contains('w-checkbox-input')) {
+          visualDiv.classList.toggle('w--redirected-checked', checkbox.checked);
+        }
+        updateButtonState();
+      });
     });
   };
 
@@ -706,15 +817,28 @@ const DynamicFormHandler = (() => {
       if (input.type === 'checkbox') {
         if (!processedFields.has(fieldName)) {
           processedFields.add(fieldName);
-          
+
           const checkboxGroup = form.querySelectorAll(`input[name="${input.name}"]:checked`);
           const values = Array.from(checkboxGroup).map((cb) => cb.value);
-          
+
           if (values.length > 0) {
             fields.push({
               objectTypeId: objectTypeId,
               name: fieldName,
               value: values.join('; '),
+            });
+          }
+        }
+      } else if (input.type === 'radio') {
+        if (!processedFields.has(fieldName)) {
+          processedFields.add(fieldName);
+
+          const checkedRadio = form.querySelector(`input[name="${input.name}"]:checked`);
+          if (checkedRadio) {
+            fields.push({
+              objectTypeId: objectTypeId,
+              name: fieldName,
+              value: checkedRadio.value,
             });
           }
         }
